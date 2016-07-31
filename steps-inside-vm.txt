@@ -1,0 +1,22 @@
+sudo apt-get -y update
+sudo apt-get install -y git
+sudo useradd stack
+sudo echo stack:123456 | sudo chpasswd
+sudo mkdir /home/stack
+sudo chown stack:stack /home/stack
+sudo sh -c "echo \"stack ALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers"
+sudo sh -c "echo \"Defaults:stack !requiretty\" >> /etc/sudoers"
+su stack
+git clone https://git.openstack.org/openstack-dev/devstack
+cd devstack
+echo '[[local|localrc]]' > local.conf
+echo ADMIN_PASSWORD=password >> local.conf
+echo DATABASE_PASSWORD=password >> local.conf
+echo RABBIT_PASSWORD=password >> local.conf
+echo SERVICE_PASSWORD=password >> local.conf
+./stack.sh
+=============================================
+sudo passwd stack
+sudo visudo
+            stack ALL=(ALL) NOPASSWD:ALL
+            Defaults:stack !requiretty
