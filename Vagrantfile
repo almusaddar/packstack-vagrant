@@ -2,39 +2,33 @@
 # vi: set ft=ruby :
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "ubuntu/trusty64"
-  config.vm.box_check_update = true
-  # config.vm.hostname = "OpenStack-test"
-  config.vm.network "private_network", ip: "192.168.100.100"
-  # config.vm.post_up_message = "OpenStack-test"
+  config.vm.box = "bento/centos-7.2"
+  config.vm.box_check_update = false
   config.vm.network "forwarded_port", guest: 80, host: 8080
-  # config.vm.network "public_network"
-  # config.vm.synced_folder "../data", "/vagrant_data"
-
-  config.vm.provider "virtualbox" do |vb|
-    vb.gui = false
-    vb.memory = "4096"
+  config.vm.network "private_network", ip: "192.168.99.99"
+  config.vm.network "public_network"
+  config.vm.hostname = "openstack.lab"
+  config.vm.post_up_message = "Start OpenStack"
+  config.vm.synced_folder "./", "/vagrant"
+  config.ssh.insert_key = false
+  config.ssh.username = "vagrant"
+  config.ssh.password = "vagrant"
+  config.vm.provider "virtualbox" do |v|
+      v.name = "openstack.lab"
+      v.cpus = 4
+      v.customize ["modifyvm", :id, "--memory", "8192"]
   end
-
   config.vm.provision "shell", inline: <<-SHELL
-      sudo apt-get -y update
-      sudo apt-get install -y git
-      sudo useradd stack
-      sudo echo stack:123456 | sudo chpasswd
-      sudo mkdir /home/stack
-      sudo chown stack:stack /home/stack
-      sudo sh -c "echo \"stack ALL=(ALL) NOPASSWD:ALL\" >> /etc/sudoers"
-      sudo sh -c "echo \"Defaults:stack !requiretty\" >> /etc/sudoers"
-      su stack
-      cd /home/stack
-      git clone https://git.openstack.org/openstack-dev/devstack
-      cd devstack
-      echo '[[local|localrc]]' > local.conf
-      echo ADMIN_PASSWORD=password >> local.conf
-      echo DATABASE_PASSWORD=password >> local.conf
-      echo RABBIT_PASSWORD=password >> local.conf
-      echo SERVICE_PASSWORD=password >> local.conf
-      ./stack.sh
+    echo "configure network settings"
+    sudo systemctl disable firewalld > /dev/null
+    sudo systemctl stop firewalld > /dev/null
+    sudo systemctl disable NetworkManager > /dev/null
+    sudo systemctl stop NetworkManager > /dev/null
+    sudo systemctl enable network > /dev/null
+    sudo systemctl start network > /dev/null
+    echo "Update System & Install openstack-packstack"
+    sudo yum install -y centos-release-openstack-mitaka > /dev/null
+    sudo yum update -y > /dev/null
+    sudo yum install -y openstack-packstack > /dev/null
   SHELL
-
 end
